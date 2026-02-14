@@ -95,14 +95,19 @@ async function getUploadsPlaylistId(channelId) {
   };
 }
 
-// --- Get recent videos from playlist ---
-async function getRecentVideos(playlistId, count) {
-  const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=${count}&key=${API_KEY}`;
+// --- Get top videos from the past year by view count ---
+async function getTopVideosLastYear(channelId) {
+  const oneYearAgo = new Date();
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+  const publishedAfter = oneYearAgo.toISOString();
+
+  // Fetch top videos sorted by view count
+  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&order=viewCount&publishedAfter=${publishedAfter}&maxResults=50&key=${API_KEY}`;
   const data = await apiGet(url);
   if (!data.items) return [];
   return data.items.map((item) => ({
-    videoId: item.snippet.resourceId.videoId,
-    title: item.snippet.title,
+    videoId: item.id.videoId,
+    title: item.snippet.title.replace(/&#39;/g, "'").replace(/&amp;/g, "&").replace(/&quot;/g, '"'),
     publishedAt: item.snippet.publishedAt,
   }));
 }
@@ -222,9 +227,9 @@ async function main() {
   }
 
   console.log(`Found: ${channelInfo.channelName}`);
-  console.log("Fetching recent videos...\n");
+  console.log("Fetching top videos from the past year...\n");
 
-  const videos = await getRecentVideos(channelInfo.playlistId, 10);
+  const videos = await getTopVideosLastYear(channelId);
   if (videos.length === 0) {
     console.log("No videos found on this channel.");
     process.exit(1);
@@ -232,20 +237,23 @@ async function main() {
 
   const stats = await getVideoStats(videos.map((v) => v.videoId));
 
-  // Merge stats into videos
-  const enriched = videos.map((v) => ({
-    ...v,
-    views: stats[v.videoId]?.views || 0,
-    likes: stats[v.videoId]?.likes || 0,
-    comments: stats[v.videoId]?.comments || 0,
-  }));
+  // Merge stats into videos, sort by views, take top 10
+  const enriched = videos
+    .map((v) => ({
+      ...v,
+      views: stats[v.videoId]?.views || 0,
+      likes: stats[v.videoId]?.likes || 0,
+      comments: stats[v.videoId]?.comments || 0,
+    }))
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 10);
 
   // Print report
   console.log("=".repeat(60));
   console.log(`  CHANNEL REPORT: ${channelInfo.channelName}`);
   console.log("=".repeat(60));
   console.log("");
-  console.log("--- TOP 10 RECENT VIDEOS ---\n");
+  console.log("--- TOP 10 VIDEOS (PAST YEAR, BY VIEWS) ---\n");
 
   enriched.forEach((v, i) => {
     console.log(`  ${(i + 1).toString().padStart(2)}. ${v.title}`);
