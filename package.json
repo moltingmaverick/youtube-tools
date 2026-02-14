@@ -1,0 +1,18 @@
+{
+  "name": "youtube-tools",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "fetch": "node fetch.js",
+    "summarize": "node summarize.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "youtube-transcript": "^1.2.1",
+    "youtubei.js": "^16.0.1"
+  }
+}
