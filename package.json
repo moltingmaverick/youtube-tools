@@ -5,13 +5,15 @@
   "main": "index.js",
   "scripts": {
     "fetch": "node fetch.js",
-    "summarize": "node summarize.js"
+    "summarize": "node summarize.js",
+    "channel-report": "node channel-report.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "dotenv": "^17.3.1",
     "youtube-transcript": "^1.2.1",
     "youtubei.js": "^16.0.1"
   }
